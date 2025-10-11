@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <title>Dữ liệu chi tiết - Giám sát ngập TP Huế</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      font-family: Calibri, sans-serif;
+      font-size: 15px;
+      color: #222;
+    }
+    .header-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #0074D9;
+      color: white;
+      font-size: 19px;
+      display: flex;
+      align-items: center;
+      padding-left: 18px;
+      z-index: 9999;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .nav-bar {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: #0074D9;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding-left: 18px;
+      font-size: 16px;
+      z-index: 9999;
+      gap: 20px;
+    }
+    .nav-bar a {
+      color: white;
+      text-decoration: none;
+    }
+    .nav-bar a.active {
+      font-weight: bold;
+    }
+    .content {
+      margin-top: 110px;
+      padding: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #999;
+      padding: 6px 8px;
+      text-align: left;
+    }
+    th {
+      background: #f0f0f0;
+    }
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+    .filter {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header-bar">📡 Hệ thống Giám sát Ngập lụt Thành phố Huế</div>
+  <div class="nav-bar">
+    <a href="index.html">Trang chủ</a>
+    <a href="detail.html" class="active">Dữ liệu chi tiết</a>
+  </div>
+
+  <div class="content">
+    <h2>Bảng dữ liệu vết lũ</h2>
+    <div class="filter">
+      <label for="yearSelect">Chọn năm:</label>
+      <select id="yearSelect">
+        <option value="all">Tất cả</option>
+        <option value="2020">2020</option>
+        <option value="2022">2022</option>
+        <option value="2023" selected>2023</option>
+      </select>
+      <span id="count" style="margin-left: 15px;"></span>
+    </div>
+    <div id="table">Đang tải dữ liệu...</div>
+  </div>
+
+  <script>
+    const container = document.getElementById("table");
+    const yearSelect = document.getElementById("yearSelect");
+    const countSpan = document.getElementById("count");
+    let data = [];
+
+    fetch("Flood_trace_all.geojson")
+      .then(res => res.json())
+      .then(json => {
+        data = json.features || [];
+        renderTable(yearSelect.value);
+      })
+      .catch(() => {
+        container.innerHTML = "Lỗi khi tải dữ liệu.";
+      });
+
+    yearSelect.addEventListener("change", () => {
+      renderTable(yearSelect.value);
+    });
+
+    function renderTable(year) {
+  const field = year === "all" ? null : `VL${year}`;
+  const headers = data.length > 0 ? Object.keys(data[0].properties) : [];
+
+      const filtered = data.filter(f => {
+      if (year === "all") return true;
+      const val = f.properties?.[`VL${year}`];
+      return val != null && String(val).includes(String(year));
+    });
+
+  if (countSpan) {
+    countSpan.textContent = `Số vết lũ: ${filtered.length}`;
+  }
+
+  let html = `
+    <table><thead><tr>
+      ${headers.map(h => `<th>${h}</th>`).join("")}
+    </tr></thead><tbody>
+  `;
+
+  filtered.forEach(f => {
+    html += `<tr>` + headers.map(h => {
+      const val = f.properties[h];
+      return `<td>${val ?? ""}</td>`;
+    }).join("") + `</tr>`;
+  });
+
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+}
+  </script>
+</body>
+</html>
