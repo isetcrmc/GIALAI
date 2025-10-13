@@ -119,15 +119,13 @@ promises.push(
 );
 
 // ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG (Station.geojson) ====
-// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — add & fit; fallback circle nếu icon lỗi ====
+// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — chỉ hiện khi tick ====
 promises.push(
   fetch("./Station.geojson?v=5")
-    .then(r => { if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
     .then(data => {
-      const iconUrl = 'icons/ruler_black.svg';
-      const icon = L.icon({ iconUrl, iconSize: [20,20] });
+      const icon = L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20, 20] });
 
-      let usedCircle = false;
       const layer = L.geoJSON(data, {
         // đề phòng file để [lat,lon] → đảo lại
         coordsToLatLng: (c) => {
@@ -135,10 +133,10 @@ promises.push(
           if (Math.abs(lat) > 90 || Math.abs(lon) > 180) [lon, lat] = [lat, lon];
           return L.latLng(lat, lon);
         },
+        // nếu icon lỗi (hiếm), dùng circleMarker để vẫn thấy điểm
         pointToLayer: (f, ll) => {
-          // thử tạo marker với icon; nếu icon lỗi, dùng circle
           try { return L.marker(ll, { icon }); }
-          catch { usedCircle = true; return L.circleMarker(ll, { radius: 6, weight: 1, fillOpacity: .9 }); }
+          catch { return L.circleMarker(ll, { radius: 6, weight: 1, fillOpacity: .9 }); }
         },
         onEachFeature: (f, l) => {
           const p = f.properties || {};
@@ -148,18 +146,27 @@ promises.push(
         }
       });
 
+      // chỉ đăng ký, không tự add
       window.layerMapping["tram_water"] = layer;
       console.log("[tram_water] features:", layer.getLayers().length);
 
-      // 👉 add & zoom ngay để chị thấy liền (bỏ nếu không muốn)
-      map.addLayer(layer);
-      try { map.fitBounds(layer.getBounds().pad(0.05)); } catch(_) {}
+      // đảm bảo checkbox mặc định tắt & không còn layer trên map
+      const cb = document.querySelector('#layerControl input[data-layer="tram_water"]');
+      if (cb) cb.checked = false;
+      if (map.hasLayer(layer)) map.removeLayer(layer);
 
-      // nếu muốn trở lại dùng icon sau khi kiểm tra:
-      if (usedCircle) console.warn("Icon SVG có thể không render, đang dùng circleMarker tạm.");
+      // lần đầu bật thì auto-zoom tới lớp (tuỳ chọn)
+      if (cb) {
+        cb.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            try { map.fitBounds(layer.getBounds().pad(0.05)); } catch (_) {}
+          }
+        }, { once: true });
+      }
     })
     .catch(e => console.warn("Station.geojson lỗi:", e))
 );
+
 
 
 // ================== 4) Vết lũ 2020–2021 ==================
