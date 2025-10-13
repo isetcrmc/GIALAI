@@ -1,0 +1,18 @@
+{
+"type": "FeatureCollection",
+"name": "Truso_PS",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "Id": 0, "Ten": "Trụ sở thôn Lộc Thượng", "Phanloai": "thôn", "Name": "Trụ sở thôn Lộc Thượng" }, "geometry": { "type": "Point", "coordinates": [ 109.219383885194262, 13.878912604720854 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "Ten": "UBND xã Phước Sơn", "Phanloai": "UBND", "Name": "UBND xã Phước Sơn" }, "geometry": { "type": "Point", "coordinates": [ 109.186759753866795, 13.861437234240801 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "Ten": "Trụ sở thôn Dương Thiện", "Phanloai": "thôn", "Name": "Trụ sở thôn Dương Thiện" }, "geometry": { "type": "Point", "coordinates": [ 109.220275010327398, 13.88310213508873 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "Ten": "Trụ sở thôn Vinh Quang 2", "Phanloai": "thôn", "Name": "Trụ sở thôn Vinh Quang 2" }, "geometry": { "type": "Point", "coordinates": [ 109.222971726275361, 13.862897366678398 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "Ten": "Trụ sở thôn Xuân Phương", "Phanloai": "thôn", "Name": "Trụ sở thôn Xuân Phương" }, "geometry": { "type": "Point", "coordinates": [ 109.198755951618665, 13.88331076264744 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "Ten": "Trụ sở thôn Kỳ Sơn", "Phanloai": "thôn", "Name": "Trụ sở thôn Kỳ Sơn" }, "geometry": { "type": "Point", "coordinates": [ 109.197897775282229, 13.857844797413888 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "Ten": "Trụ sở thôn Phụng Sơn", "Phanloai": "thôn", "Name": "Trụ sở thôn Phụng Sơn" }, "geometry": { "type": "Point", "coordinates": [ 109.190679106075265, 13.862047690856242 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "Ten": "Trụ sở thôn Lộc Trung", "Phanloai": "thôn", "Name": "Trụ sở thôn Lộc Trung" }, "geometry": { "type": "Point", "coordinates": [ 109.209338659922281, 13.864167987961839 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "Ten": "Trụ sở thôn Vinh Quang 1", "Phanloai": "thôn", "Name": "Trụ sở thôn Vinh Quang 1" }, "geometry": { "type": "Point", "coordinates": [ 109.217331978269698, 13.863585650001612 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "Ten": "Trụ sở thôn Mỹ Trung", "Phanloai": "thôn", "Name": "Trụ sở thôn Mỹ Trung" }, "geometry": { "type": "Point", "coordinates": [ 109.189991115589464, 13.869362235187328 ] } },
+{ "type": "Feature", "properties": { "Id": 0, "Ten": "Trụ sở thôn Mỹ Cang", "Phanloai": "thôn", "Name": "Trụ sở thôn Mỹ Cang" }, "geometry": { "type": "Point", "coordinates": [ 109.192457644857086, 13.877778166022058 ] } }
+]
+}
