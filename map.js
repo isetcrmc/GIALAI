@@ -119,42 +119,54 @@ promises.push(
 );
 
 // ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG (Station.geojson) ====
-// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — hiện tất cả điểm (file cạnh index.html) ====
-promises.push(
-  fetch("./Station.geojson?v=2")    // ⚠️ KHÔNG có 'data/' nữa + cache buster
-    .then(r => {
-      if (!r.ok) throw new Error(`HTTP ${r.status} at ${r.url}`);
-      return r.json();
-    })
-    .then(data => {
-      const iconWater = L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20, 20] });
+// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — preload icon, fallback nếu lỗi ====
+promises.push(new Promise((resolve) => {
+  const iconUrl = 'icons/ruler_black.svg';       // file nằm: ./icons/ruler_black.svg
+  const testImg = new Image();
 
-      const layer = L.geoJSON(data, {
-        pointToLayer: (f, latlng) => L.marker(latlng, { icon: iconWater }),
-        onEachFeature: (f, l) => {
-          const p = f.properties || {};
-          const [lon, lat] = f.geometry?.coordinates ?? [];
-          const name = p.Name2 || p.TENHIENTHI || p.Name || p.Tentram || '';
-          let html = `<b>${name}</b>`;
-          if (typeof lat === "number" && typeof lon === "number") {
-            html += `<br><b>Tọa độ:</b> ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+  testImg.onload = () => buildLayer(L.icon({ iconUrl, iconSize: [20,20] }));
+  testImg.onerror = () => buildLayer(new L.Icon.Default()); // fallback nếu SVG lỗi
+  testImg.src = iconUrl;  // kích hoạt tải ảnh
+
+  function buildLayer(iconObj) {
+    fetch('./Station.geojson?v=3')               // file nằm cùng thư mục với index.html
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(data => {
+        const layer = L.geoJSON(data, {
+          pointToLayer: (f, latlng) => L.marker(latlng, { icon: iconObj }),
+          onEachFeature: (f, l) => {
+            const p = f.properties || {};
+            const [lon, lat] = f.geometry?.coordinates ?? [];
+            const name = p.Name2 || p.TENHIENTHI || p.Name || p.Tentram || '';
+            let html = `<b>${name}</b>`;
+            if (typeof lat === 'number' && typeof lon === 'number') {
+              html += `<br><b>Tọa độ:</b> ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+            }
+            l.bindPopup(html);
           }
-          l.bindPopup(html);
+        });
+
+        window.layerMapping['tram_water'] = layer;
+        console.log('[tram_water] markers:', layer.getLayers().length, 'icon:', iconObj.options.iconUrl || 'default');
+
+        // tự add & zoom (có thể bỏ nếu không muốn)
+        const cb = document.querySelector('#layerControl input[data-layer="tram_water"]');
+        if (!cb || cb.checked) {
+          map.addLayer(layer);
+          try { map.fitBounds(layer.getBounds().pad(0.05)); } catch(_) {}
         }
+        resolve();
+      })
+      .catch(e => {
+        console.warn('Station.geojson lỗi:', e);
+        resolve();
       });
+  }
+}));
 
-      window.layerMapping["tram_water"] = layer;
-
-      // Tự add nếu đã tick & zoom tới lớp
-      const cb = document.querySelector('#layerControl input[data-layer="tram_water"]');
-      if (cb && cb.checked) {
-        map.addLayer(layer);
-        try { map.fitBounds(layer.getBounds().pad(0.05)); } catch (_) {}
-      }
-      console.log("[tram_water] features:", layer.getLayers().length);
-    })
-    .catch(e => console.warn("Station.geojson lỗi:", e))
-);
 
 
 // ================== 4) Vết lũ 2020–2021 ==================
