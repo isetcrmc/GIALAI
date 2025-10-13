@@ -119,10 +119,13 @@ promises.push(
 );
 
 // ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG (Station.geojson) ====
-// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — hiện tất cả điểm ====
+// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — hiện tất cả điểm (file cạnh index.html) ====
 promises.push(
-  fetch("Station.geojson") // nếu file nằm cạnh index.html thì đổi thành "Station.geojson"
-    .then(r => r.json())
+  fetch("./Station.geojson?v=2")    // ⚠️ KHÔNG có 'data/' nữa + cache buster
+    .then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status} at ${r.url}`);
+      return r.json();
+    })
     .then(data => {
       const iconWater = L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20, 20] });
 
@@ -130,8 +133,7 @@ promises.push(
         pointToLayer: (f, latlng) => L.marker(latlng, { icon: iconWater }),
         onEachFeature: (f, l) => {
           const p = f.properties || {};
-          // popup: tên + toạ độ (nếu có)
-          const [lon, lat] = (f.geometry?.coordinates ?? []);
+          const [lon, lat] = f.geometry?.coordinates ?? [];
           const name = p.Name2 || p.TENHIENTHI || p.Name || p.Tentram || '';
           let html = `<b>${name}</b>`;
           if (typeof lat === "number" && typeof lon === "number") {
@@ -141,17 +143,15 @@ promises.push(
         }
       });
 
-      // gán đúng key để khớp checkbox
       window.layerMapping["tram_water"] = layer;
 
-      console.log("[tram_water] features:", layer.getLayers().length);
-
-      // nếu checkbox đã bật trước khi load xong → add & zoom tới
+      // Tự add nếu đã tick & zoom tới lớp
       const cb = document.querySelector('#layerControl input[data-layer="tram_water"]');
       if (cb && cb.checked) {
         map.addLayer(layer);
-        try { map.fitBounds(layer.getBounds().pad(0.05)); } catch(_) {}
+        try { map.fitBounds(layer.getBounds().pad(0.05)); } catch (_) {}
       }
+      console.log("[tram_water] features:", layer.getLayers().length);
     })
     .catch(e => console.warn("Station.geojson lỗi:", e))
 );
