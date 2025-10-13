@@ -118,27 +118,31 @@ promises.push(
   }).catch(e => console.warn("rain.geojson lỗi:", e))
 );
 
-// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG (Station.geojson) ====
-// ================== Trạm đo mực nước tự động (đúng mẫu như tháp) ==================
+// Trạm đo mực nước tự động (đơn giản như trạm mưa)
 promises.push(
-  fetch("./Station.geojson")        // nếu file cạnh index.html
+  fetch("./Station.geojson")
     .then(r => r.json())
     .then(data => {
-      const icon = L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20,20] });
+      const waterIcon = L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [18,18] });
+
       layerMapping["tram_water"] = L.geoJSON(data, {
-        pointToLayer: (f, ll) => L.marker(ll, { icon }),
+        pointToLayer: (f, ll) => L.marker(ll, { icon: waterIcon }),
         onEachFeature: (f, l) => {
           const p = f.properties || {};
           const name = p.Name2 || p.TENHIENTHI || p.Name || p.Tentram || '';
-          const c = f.geometry?.coordinates;
-          const lat = Array.isArray(c) ? Number(c[1]) : null;
-          const lon = Array.isArray(c) ? Number(c[0]) : null;
-          l.bindPopup(`<b>${name}</b>${(lat!=null&&lon!=null)?`<br><b>Tọa độ:</b> ${lat.toFixed(2)}, ${lon.toFixed(2)}`:''}`);
+          l.bindPopup(`<b>${name}</b>`);
         }
       });
+
+      // 👉 chỉ 1 dòng này để bắt trường hợp đã tick trước khi lớp load xong:
+      const cb = document.querySelector('#layerControl input[data-layer="tram_water"]');
+      if (cb && cb.checked) map.addLayer(layerMapping["tram_water"]);
+
+      console.log("[tram_water] ready:", layerMapping.tram_water.getLayers().length, "markers");
     })
     .catch(e => console.warn("Station.geojson lỗi:", e))
 );
+
 
 // ================== 4) Vết lũ 2020–2021 ==================
 ["2020","2021"].forEach((year) => {
