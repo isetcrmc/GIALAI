@@ -94,7 +94,7 @@
     <div id="table">Đang tải dữ liệu...</div>
   </div>
 
-    <script>
+<script>
   const container = document.getElementById("table");
   const yearSelect = document.getElementById("yearSelect");
   const countSpan = document.getElementById("count");
@@ -112,11 +112,21 @@
 
   function renderTable(year) {
     const exclude = new Set(["field_8","X_m","Y_m"]);
-    // Lấy headers từ bản ghi đầu tiên, rồi loại cột không muốn hiển thị
+    // Các cột cần format 2 chữ số thập phân
+    const coordCols = new Set(["X","Y","Lon","Lat","Longitude","Latitude"]);
+    const toNum = v => {
+      if (v == null || v === "") return null;
+      const n = Number(String(v).trim().replace(",", "."));
+      return isFinite(n) ? n : null;
+    };
+    const fmt2 = v => {
+      const n = toNum(v);
+      return n == null ? (v ?? "") : n.toFixed(2);
+    };
+
     const rawHeaders = data.length > 0 ? Object.keys(data[0].properties) : [];
     const headers = rawHeaders.filter(h => !exclude.has(h));
 
-    // Lọc theo năm: VL2020 / VL2021 có giá trị
     const filtered = data.filter(f => {
       const v = f.properties?.[`VL${year}`];
       return v != null && String(v).includes(String(year));
@@ -126,7 +136,11 @@
 
     let html = `<table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>`;
     filtered.forEach(f => {
-      html += `<tr>` + headers.map(h => `<td>${f.properties[h] ?? ""}</td>`).join("") + `</tr>`;
+      html += `<tr>` + headers.map(h => {
+        const val = f.properties[h];
+        // Nếu là cột tọa độ thì format 2 số thập phân
+        return `<td>${coordCols.has(h) ? fmt2(val) : (val ?? "")}</td>`;
+      }).join("") + `</tr>`;
     });
     html += `</tbody></table>`;
     container.innerHTML = html;
