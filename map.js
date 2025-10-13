@@ -119,76 +119,25 @@ promises.push(
 );
 
 // ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG (Station.geojson) ====
+  "Trạm đo mực nước tự động": L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20, 20] })
+};
+
 promises.push(
-  fetch("data/Station.geojson") // đổi đường dẫn cho đúng vị trí file của chị
-    .then(r => r.json())
-    .then(raw => {
-      const toNum = v => {
-        if (v == null || v === "") return null;
-        const s = String(v).trim().replace(",", ".");
-        const n = Number(s);
-        return (isFinite(n) && !isNaN(n)) ? n : null;
-      };
-      const inVN = (lng, lat) => lng >= 102 && lng <= 110 && lat >= 8 && lat <= 24;
-
-      const fc = (raw && raw.type === "FeatureCollection")
-        ? raw
-        : { type: "FeatureCollection", features: raw?.features || [] };
-
-      const feats = (fc.features || []).map(feat => {
-        if (!feat) return null;
-        const p = feat.properties || {};
-        let lng = null, lat = null;
-
-        // 1) Nếu đã có geometry Point → lấy ra
-        if (feat.geometry && feat.geometry.type === "Point" && Array.isArray(feat.geometry.coordinates)) {
-          [lng, lat] = feat.geometry.coordinates; // kỳ vọng [lon, lat]
-        } else {
-          // 2) Không có geometry → dựng từ cột X (lat), Y (lon)
-          lat = toNum(p.X ?? p.Lat ?? p.Vido ?? p.Latitude);
-          lng = toNum(p.Y ?? p.Lon ?? p.Kinhdo ?? p.Longitude);
-        }
-
-        // Loại bỏ dòng thiếu toạ độ
-        if (lng == null || lat == null || lng === 0 || lat === 0) return null;
-
-        // Nếu có vẻ bị đảo, thì đảo lại
-        if (!inVN(lng, lat) && inVN(lat, lng)) {
-          const t = lng; lng = lat; lat = t;
-        }
-
-        return {
-          type: "Feature",
-          properties: p,
-          geometry: { type: "Point", coordinates: [lng, lat] }
-        };
-      }).filter(Boolean);
-
-      console.log(`[tram_water] số điểm: ${feats.length}`, feats[0]?.geometry?.coordinates);
-
-      const waterIcon = L.icon({ iconUrl: 'icons/water.svg', iconSize: [18,18] });
-
-      const layer = L.geoJSON({ type:"FeatureCollection", features: feats }, {
-        pointToLayer: (f, latlng) => L.marker(latlng, { icon: waterIcon }),
+  fetch("Station.geojson").then(res => res.json()).then(data => {
+    Object.entries(stationIcons).forEach(([type, icon]) => {
+      const layer = L.geoJSON(data, {
+        filter: f => f.properties.Type === type,
+        pointToLayer: (f, latlng) => L.marker(latlng, { icon }),
         onEachFeature: (f, l) => {
-          const p = f.properties || {};
-          const name = p.Name || p.TENHIENTHI || p.Tentram || '';
-          const [lon, lat] = f.geometry.coordinates;
-          l.bindPopup(`<b>${name}</b><br><b>Tọa độ:</b> ${lat.toFixed(2)}, ${lon.toFixed(2)}`);
+          const p = f.properties;
+          l.bindPopup(`<b>${p.Name2 || p.Name || ''}</b><br><b>Loại:</b> ${p.Type}<br><b>Tọa độ:</b> ${p.X || ''}, ${p.Y || ''}`);
         }
       });
-
-      layerMapping["tram_water"] = layer;
-
-      // nếu checkbox đã bật trước khi load xong → add luôn
-      const cb = document.querySelector('#layerControl input[data-layer="tram_water"]');
-      if (cb && cb.checked) map.addLayer(layer);
-    })
-    .catch(e => console.warn("Station.geojson lỗi:", e))
+      const key = icon.options.iconUrl.split('/').pop().replace('.svg', '');
+      layerMapping[key] = layer;
+    });
+  })
 );
-
-
-
 
 // ================== 4) Vết lũ 2020–2021 ==================
 ["2020","2021"].forEach((year) => {
