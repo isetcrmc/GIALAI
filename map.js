@@ -121,7 +121,7 @@ promises.push(
 // ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG (Station.geojson) ====
 // ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — hiện tất cả điểm ====
 promises.push(
-  fetch("data/Station.geojson") // nếu file nằm cạnh index.html thì đổi thành "Station.geojson"
+  fetch("Station.geojson") // nếu file nằm cạnh index.html thì đổi thành "Station.geojson"
     .then(r => r.json())
     .then(data => {
       const iconWater = L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20, 20] });
