@@ -119,43 +119,26 @@ promises.push(
 );
 
 // ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG (Station.geojson) ====
-// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — add & fit; fallback circle nếu icon lỗi ====
+// ================== Trạm đo mực nước tự động (đúng mẫu như tháp) ==================
 promises.push(
-  fetch("./Station.geojson?v=5")
-    .then(r => { if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+  fetch("./Station.geojson")        // nếu file cạnh index.html
+    .then(r => r.json())
     .then(data => {
-      const iconUrl = 'icons/ruler_black.svg';
-      const icon = L.icon({ iconUrl, iconSize: [20,20] });
-
-      let usedCircle = false;
-      const layer = L.geoJSON(data, {
-        // đề phòng file để [lat,lon] → đảo lại
-        coordsToLatLng: (c) => {
-          let [lon, lat] = c;
-          if (Math.abs(lat) > 90 || Math.abs(lon) > 180) [lon, lat] = [lat, lon];
-          return L.latLng(lat, lon);
-        },
-        pointToLayer: (f, ll) => {
-          // thử tạo marker với icon; nếu icon lỗi, dùng circle
-          try { return L.marker(ll, { icon }); }
-          catch { usedCircle = true; return L.circleMarker(ll, { radius: 6, weight: 1, fillOpacity: .9 }); }
-        },
+      const icon = L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20,20] });
+      layerMapping["tram_water"] = L.geoJSON(data, {
+        pointToLayer: (f, ll) => L.marker(ll, { icon }),
         onEachFeature: (f, l) => {
           const p = f.properties || {};
-          const c = l.getLatLng();
           const name = p.Name2 || p.TENHIENTHI || p.Name || p.Tentram || '';
-          l.bindPopup(`<b>${name}</b><br><b>Tọa độ:</b> ${c.lat.toFixed(2)}, ${c.lng.toFixed(2)}`);
+          const c = f.geometry?.coordinates;
+          const lat = Array.isArray(c) ? Number(c[1]) : null;
+          const lon = Array.isArray(c) ? Number(c[0]) : null;
+          l.bindPopup(`<b>${name}</b>${(lat!=null&&lon!=null)?`<br><b>Tọa độ:</b> ${lat.toFixed(2)}, ${lon.toFixed(2)}`:''}`);
         }
       });
-
-      window.layerMapping["tram_water"] = layer;
-      console.log("[tram_water] features:", layer.getLayers().length);
-      
     })
     .catch(e => console.warn("Station.geojson lỗi:", e))
 );
-
-
 
 // ================== 4) Vết lũ 2020–2021 ==================
 ["2020","2021"].forEach((year) => {
