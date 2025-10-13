@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <title>Hệ thống Giám sát Ngập lụt Thành phố Huế</title>
+  <title>Hệ thống Giám sát Ngập lụt Tỉnh Gia Lai</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.awesome-markers/dist/leaflet.awesome-markers.css" />
@@ -95,7 +95,7 @@
 </head>
 <body>
   <div class="header-bar">
-    📡 Hệ thống Giám sát Ngập lụt Thành phố Huế
+    📡 Hệ thống Giám sát Ngập lụt Tỉnh Gia Lai
   </div>
   <div class="nav-buttons">
     <a href="index.html">Trang chủ</a>
@@ -109,17 +109,19 @@
         <summary><b>Lớp bản đồ nền</b></summary>
         <details open style="margin-left:15px">
           <summary>Ranh giới hành chính</summary>
+          <label><input type="checkbox" data-layer="province"> Ranh giới tỉnh</label><br>
           <label><input type="checkbox" data-layer="ward"> Ranh giới phường</label><br>
           <label><input type="checkbox" data-layer="community"> Ranh giới cộng đồng</label>
         </details>
         <details open style="margin-left:15px">
-          <summary>Đỗ xe tránh ngập</summary>
-          <label><input type="checkbox" data-layer="do_xe_1"> Đỗ xe 1 chiều</label><br>
-          <label><input type="checkbox" data-layer="do_xe_2" style="color:#8B4513"> Đỗ xe 2 chiều</label>
+          <summary> Trụ sở thôn, khu phố</summary>
+          <label><input type="checkbox" data-layer="Truso_PS"> Trụ sở thôn</label><br>
+          <label><input type="checkbox" data-layer="Truso_NP" style="color:#8B4513"> Trụ sở khu phố</label>
         </details>
         <details open style="margin-left:15px">
-          <summary>Trạm quan trắc KTTV</summary>
-          <label><input type="checkbox" data-layer="tram_vrain"> Trạm Vrain</label>
+          <summary>Trạm quan trắc chuyên dùng</summary>
+          <label><input type="checkbox" data-layer="tram_rain"> Trạm đo mưa tự động</label>
+          <label><input type="checkbox" data-layer="tram_rain"> Trạm đo mực nước tự động</label>
         </details>
       </details>
 
@@ -128,14 +130,11 @@
         <details open style="margin-left:15px">
           <summary>Vết lũ</summary>
           <label><input type="checkbox" data-layer="flood2020"> Năm 2020</label><br>
-          <label><input type="checkbox" data-layer="flood2022"> Năm 2022</label><br>
-          <label><input type="checkbox" data-layer="flood2023"> Năm 2023</label>
+          <label><input type="checkbox" data-layer="flood2021"> Năm 2021</label>
         </details>
         <details open style="margin-left:15px">
           <summary>Trạm đo</summary>
-          <label><input type="checkbox" data-layer="ruler_black"> Tháp báo lũ</label><br>
-          <label><input type="checkbox" data-layer="ruler_brown"> Tháp cảnh báo ngập</label><br>
-          <label><input type="checkbox" data-layer="ruler_blue"> Trạm đo mực nước tự động</label>
+          <label><input type="checkbox" data-layer="ruler_blue"> Tháp cảnh báo lũ thông minh</label>
         </details>
       </details>
     </div>
