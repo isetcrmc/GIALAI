@@ -118,23 +118,62 @@ promises.push(
   }).catch(e => console.warn("rain.geojson lỗi:", e))
 );
 
-// Trạm đo mực nước tự động (đọc cột Vido/Kinhdo, tự sửa lat-lng, tự add nếu checkbox đã bật)
+// Trạm đo mực nước tự động (Station.geojson có cột X, Y)
 promises.push(
-  fetch("Station.geojson").then(res => res.json()).then(data => {
-    Object.entries(stationIcons).forEach(([type, icon]) => {
-      const layer = L.geoJSON(data, {
-        filter: f => f.properties.Type === type,
-        pointToLayer: (f, latlng) => L.marker(latlng, { icon }),
+  fetch("Station.geojson") // hoặc "data/Station.geojson" nếu nằm trong /data
+    .then(r => r.json())
+    .then(raw => {
+      const toNum = v => {
+        if (v == null || v === "") return null;
+        const n = Number(String(v).trim().replace(",", ".")); // chấp nhận "13,9"
+        return isFinite(n) ? n : null;
+      };
+      const inVN = (lng, lat) => lng >= 102 && lng <= 110 && lat >= 8 && lat <= 24;
+
+      const fc = raw.type === "FeatureCollection" ? raw : { type:"FeatureCollection", features: raw.features || [] };
+
+      const feats = (fc.features || []).map(f => {
+        const p = f.properties || {};
+        // X ~ lat, Y ~ lon theo bảng chị gửi → GeoJSON cần [lon,lat] = [Y,X]
+        let lat = toNum(p.X), lon = toNum(p.Y);
+        if (lat == null || lon == null || lat === 0 || lon === 0) return null;
+
+        // Nếu nhận nhầm thứ tự, tự đảo
+        if (!inVN(lon, lat) && inVN(lat, lon)) { const t = lon; lon = lat; lat = t; }
+
+        return {
+          type: "Feature",
+          properties: p,
+          geometry: { type: "Point", coordinates: [lon, lat] }
+        };
+      }).filter(Boolean);
+
+      console.log(`[tram_water] points: ${feats.length}`);
+
+      const waterIcon = L.icon({ iconUrl: 'icons/water.svg', iconSize: [18,18] });
+
+      const layer = L.geoJSON({ type:"FeatureCollection", features: feats }, {
+        pointToLayer: (f, ll) => L.marker(ll, { icon: waterIcon }),
         onEachFeature: (f, l) => {
-          const p = f.properties;
-          l.bindPopup(`<b>${p.Name || p.Name || ''}</b><br><b>Loại:</b> ${p.Type}<br><b>Tọa độ:</b> ${p.X || ''}, ${p.Y || ''}`);
+          const p = f.properties || {};
+          const name = p.Name || p.TENHIENTHI || p.Tentram || '';
+          // hiện tọa độ 2 chữ số thập phân
+          const [lon, lat] = f.geometry.coordinates;
+          l.bindPopup(
+            `<b>${name}</b><br><b>Tọa độ:</b> ${lat.toFixed(2)}, ${lon.toFixed(2)}`
+          );
         }
       });
-      const key = icon.options.iconUrl.split('/').pop().replace('.svg', '');
-      layerMapping[key] = layer;
-    });
-  })
+
+      layerMapping["tram_water"] = layer;
+
+      // nếu checkbox đã được bật trước khi load xong thì add luôn
+      const cb = document.querySelector('#layerControl input[data-layer="tram_water"]');
+      if (cb && cb.checked) map.addLayer(layer);
+    })
+    .catch(e => console.warn("Station.geojson lỗi:", e))
 );
+
 
 
 // ================== 4) Vết lũ 2020–2021 ==================
