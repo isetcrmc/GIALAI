@@ -119,12 +119,54 @@ promises.push(
 );
 
 // Trạm đo mực nước tự động (nới điều kiện → luôn hiện)
+// Trạm đo mực nước tự động (Station.geojson — có cột Vido, Kinhdo)
 promises.push(
-  fetch("Station.geojson").then(r => r.json()).then(data => {
+  fetch("Station.geojson").then(r => r.json()).then(raw => {
+    const toNum = v => (v == null || v === '' ? null : Number(String(v).trim()));
+    const inVN = (lng, lat) => lng >= 102 && lng <= 110 && lat >= 8 && lat <= 24;
+
+    const fc = raw.type === "FeatureCollection" ? raw : { type:"FeatureCollection", features: raw.features || [] };
+
+    const feats = (fc.features || []).map(feat => {
+      const p = feat.properties || {};
+
+      // ưu tiên lấy từ geometry nếu có
+      let lng = null, lat = null;
+      if (feat.geometry && feat.geometry.type === "Point" && Array.isArray(feat.geometry.coordinates)) {
+        [lng, lat] = feat.geometry.coordinates;
+      } else {
+        // lấy từ các tên cột phổ biến, đặc biệt Vido/Kinhdo
+        const candLng = toNum(p.Kinhdo ?? p.X ?? p.Lon ?? p.Longitude);
+        const candLat = toNum(p.Vido  ?? p.Y ?? p.Lat ?? p.Latitude);
+        lng = candLng; lat = candLat;
+      }
+
+      // loại bỏ toạ độ rỗng/0
+      if (lng == null || lat == null || lng === 0 || lat === 0) return null;
+
+      // nếu có vẻ bị ngược, đảo lại
+      if (!inVN(lng, lat) && inVN(lat, lng)) {
+        const t = lng; lng = lat; lat = t;
+      }
+
+      return {
+        type: "Feature",
+        properties: p,
+        geometry: { type: "Point", coordinates: [lng, lat] }
+      };
+    }).filter(Boolean);
+
+    console.log(`[Station] đọc được ${feats.length} điểm`);
+
     const waterIcon = L.icon({ iconUrl: 'icons/water.svg', iconSize: [18,18] });
-    layerMapping["tram_water"] = L.geoJSON(data, {
+
+    layerMapping["tram_water"] = L.geoJSON({ type:"FeatureCollection", features: feats }, {
       pointToLayer: (f, ll) => L.marker(ll, { icon: waterIcon }),
-      onEachFeature: (f, l) => l.bindPopup(`<b>${(f.properties?.Ten || f.properties?.Name) ?? ''}</b>`)
+      onEachFeature: (f, l) => {
+        const p = f.properties || {};
+        const name = p.Name || p.TENHIENTHI || p.Tentram || '';
+        l.bindPopup(`<b>${name}</b>`); // chỉ hiện tên trạm
+      }
     });
   }).catch(e => console.warn("Station.geojson lỗi:", e))
 );
