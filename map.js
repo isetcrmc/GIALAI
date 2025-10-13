@@ -118,61 +118,75 @@ promises.push(
   }).catch(e => console.warn("rain.geojson lỗi:", e))
 );
 
-// Trạm đo mực nước tự động (Station.geojson có cột X, Y)
+// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG (Station.geojson) ====
 promises.push(
-  fetch("Station.geojson") // hoặc "data/Station.geojson" nếu nằm trong /data
+  fetch("data/Station.geojson") // đổi đường dẫn cho đúng vị trí file của chị
     .then(r => r.json())
     .then(raw => {
       const toNum = v => {
         if (v == null || v === "") return null;
-        const n = Number(String(v).trim().replace(",", ".")); // chấp nhận "13,9"
-        return isFinite(n) ? n : null;
+        const s = String(v).trim().replace(",", ".");
+        const n = Number(s);
+        return (isFinite(n) && !isNaN(n)) ? n : null;
       };
       const inVN = (lng, lat) => lng >= 102 && lng <= 110 && lat >= 8 && lat <= 24;
 
-      const fc = raw.type === "FeatureCollection" ? raw : { type:"FeatureCollection", features: raw.features || [] };
+      const fc = (raw && raw.type === "FeatureCollection")
+        ? raw
+        : { type: "FeatureCollection", features: raw?.features || [] };
 
-      const feats = (fc.features || []).map(f => {
-        const p = f.properties || {};
-        // X ~ lat, Y ~ lon theo bảng chị gửi → GeoJSON cần [lon,lat] = [Y,X]
-        let lat = toNum(p.X), lon = toNum(p.Y);
-        if (lat == null || lon == null || lat === 0 || lon === 0) return null;
+      const feats = (fc.features || []).map(feat => {
+        if (!feat) return null;
+        const p = feat.properties || {};
+        let lng = null, lat = null;
 
-        // Nếu nhận nhầm thứ tự, tự đảo
-        if (!inVN(lon, lat) && inVN(lat, lon)) { const t = lon; lon = lat; lat = t; }
+        // 1) Nếu đã có geometry Point → lấy ra
+        if (feat.geometry && feat.geometry.type === "Point" && Array.isArray(feat.geometry.coordinates)) {
+          [lng, lat] = feat.geometry.coordinates; // kỳ vọng [lon, lat]
+        } else {
+          // 2) Không có geometry → dựng từ cột X (lat), Y (lon)
+          lat = toNum(p.X ?? p.Lat ?? p.Vido ?? p.Latitude);
+          lng = toNum(p.Y ?? p.Lon ?? p.Kinhdo ?? p.Longitude);
+        }
+
+        // Loại bỏ dòng thiếu toạ độ
+        if (lng == null || lat == null || lng === 0 || lat === 0) return null;
+
+        // Nếu có vẻ bị đảo, thì đảo lại
+        if (!inVN(lng, lat) && inVN(lat, lng)) {
+          const t = lng; lng = lat; lat = t;
+        }
 
         return {
           type: "Feature",
           properties: p,
-          geometry: { type: "Point", coordinates: [lon, lat] }
+          geometry: { type: "Point", coordinates: [lng, lat] }
         };
       }).filter(Boolean);
 
-      console.log(`[tram_water] points: ${feats.length}`);
+      console.log(`[tram_water] số điểm: ${feats.length}`, feats[0]?.geometry?.coordinates);
 
       const waterIcon = L.icon({ iconUrl: 'icons/water.svg', iconSize: [18,18] });
 
       const layer = L.geoJSON({ type:"FeatureCollection", features: feats }, {
-        pointToLayer: (f, ll) => L.marker(ll, { icon: waterIcon }),
+        pointToLayer: (f, latlng) => L.marker(latlng, { icon: waterIcon }),
         onEachFeature: (f, l) => {
           const p = f.properties || {};
           const name = p.Name || p.TENHIENTHI || p.Tentram || '';
-          // hiện tọa độ 2 chữ số thập phân
           const [lon, lat] = f.geometry.coordinates;
-          l.bindPopup(
-            `<b>${name}</b><br><b>Tọa độ:</b> ${lat.toFixed(2)}, ${lon.toFixed(2)}`
-          );
+          l.bindPopup(`<b>${name}</b><br><b>Tọa độ:</b> ${lat.toFixed(2)}, ${lon.toFixed(2)}`);
         }
       });
 
       layerMapping["tram_water"] = layer;
 
-      // nếu checkbox đã được bật trước khi load xong thì add luôn
+      // nếu checkbox đã bật trước khi load xong → add luôn
       const cb = document.querySelector('#layerControl input[data-layer="tram_water"]');
       if (cb && cb.checked) map.addLayer(layer);
     })
     .catch(e => console.warn("Station.geojson lỗi:", e))
 );
+
 
 
 
