@@ -121,7 +121,7 @@ promises.push(
 // ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG (Station.geojson) ====
 // ================== Trạm đo mực nước tự động ==================
 promises.push(
-  fetch("Station.geojson")
+  fetch("./Station.geojson?v=5")
     .then(r => r.json())
     .then(data => {
       const icon = L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20,20] });
