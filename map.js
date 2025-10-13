@@ -75,9 +75,9 @@ promises.push(
 // icon trụ sở thôn (nhỏ, xanh đậm)
 const iconPS = L.divIcon({
   className: 'ps-dot',
-  html: '<div style="width:14px;height:14px;border-radius:50%;background:#0b6;box-shadow:0 0 0 2px #fff,0 0 0 3px #0b6"></div>',
+  html: '<div style="width:7px;height:7px;border-radius:50%;background:#0b6;box-shadow:0 0 0 2px #fff,0 0 0 3px #0b6"></div>',
   iconSize: [7,7],
-  iconAnchor: [7,7]
+  iconAnchor: [4,4]
 });
 
 promises.push(
@@ -92,9 +92,9 @@ promises.push(
 // icon trụ sở khu phố (dễ nhìn: tím)
 const iconNP = L.divIcon({
   className: 'np-dot',
-  html: '<div style="width:16px;height:16px;border-radius:4px;background:#7e3ff2;box-shadow:0 0 0 2px #fff,0 0 0 3px #7e3ff2"></div>',
+  html: '<div style="width:7px;height:7px;border-radius:4px;background:#7e3ff2;box-shadow:0 0 0 2px #fff,0 0 0 3px #7e3ff2"></div>',
   iconSize: [7,7],
-  iconAnchor: [7,7]
+  iconAnchor: [4,4]
 });
 
 promises.push(
