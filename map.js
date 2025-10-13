@@ -119,51 +119,52 @@ promises.push(
 );
 
 // ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG (Station.geojson) ====
-// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — chỉ hiện khi tick ====
+// ================== Trạm đo mực nước tự động (chỉ hiện khi tick) ==================
 promises.push(
-  fetch("./Station.geojson?v=5")
+  fetch("./Station.geojson?v=7")
     .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-    .then(data => {
-      const icon = L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20, 20] });
-      let usedCircle = false;
+    .then(geo => {
+      const icon = L.icon({ iconUrl: "icons/ruler_black.svg", iconSize: [20, 20] });
 
-      const layer = L.geoJSON(data, {
-        // Đề phòng file để [lat,lon] → tự đảo thành [lon,lat]
+      const tramWater = L.geoJSON(geo, {
+        // phòng khi file để [lat,lon] —> đảo về [lon,lat]
         coordsToLatLng: (c) => {
           let [lon, lat] = c;
           if (Math.abs(lat) > 90 || Math.abs(lon) > 180) [lon, lat] = [lat, lon];
           return L.latLng(lat, lon);
         },
-        // Thử dùng icon; nếu icon lỗi thì fallback circle để vẫn nhìn thấy điểm
-        pointToLayer: (f, ll) => {
-          try { return L.marker(ll, { icon }); }
-          catch { usedCircle = true; return L.circleMarker(ll, { radius: 6, weight: 1, fillOpacity: .9 }); }
-        },
+        pointToLayer: (f, ll) => L.marker(ll, { icon }),
         onEachFeature: (f, l) => {
           const p = f.properties || {};
           const c = l.getLatLng();
-          const name = p.Name2 || p.TENHIENTHI || p.Name || p.Tentram || '';
-          l.bindPopup(
-            `<b>${name}</b><br><b>Tọa độ:</b> ${c.lat.toFixed(2)}, ${c.lng.toFixed(2)}`
-          );
+          const name = p.Name2 || p.TENHIENTHI || p.Name || p.Tentram || "";
+          l.bindPopup(`<b>${name}</b><br><b>Tọa độ:</b> ${c.lat.toFixed(2)}, ${c.lng.toFixed(2)}`);
         }
       });
 
-      // Đăng ký để checkbox điều khiển bật/tắt (không tự add)
-      window.layerMapping["tram_water"] = layer;
-      console.log("[tram_water] features:", layer.getLayers().length);
+      // Đăng ký đúng key để handler chung add/remove
+      window.layerMapping["tram_water"] = tramWater;
+      console.log("[tram_water] ready, features:", tramWater.getLayers().length);
 
-      // (tuỳ chọn) nếu trước đó người dùng đã tick sẵn thì add & fit một lần
+      // RÀNG BUỘC RIÊNG checkbox 'tram_water' để chắc chắn chỉ hiện khi tick
       const cb = document.querySelector('#layerControl input[data-layer="tram_water"]');
-      if (cb && cb.checked && !map.hasLayer(layer)) {
-        map.addLayer(layer);
-        try { map.fitBounds(layer.getBounds().pad(0.05)); } catch (_) {}
+      if (cb && !cb._bind_tram_water) {
+        const toggle = () => {
+          if (cb.checked) {
+            if (!map.hasLayer(tramWater)) map.addLayer(tramWater);
+          } else {
+            if (map.hasLayer(tramWater)) map.removeLayer(tramWater);
+          }
+        };
+        cb.addEventListener("change", toggle);
+        // không auto-add; chỉ cập nhật theo trạng thái hiện tại
+        toggle();
+        cb._bind_tram_water = true; // tránh bind nhiều lần
       }
-
-      if (usedCircle) console.warn("Icon SVG có thể không render, đang dùng circleMarker tạm.");
     })
     .catch(e => console.warn("Station.geojson lỗi:", e))
 );
+
 
 
 
