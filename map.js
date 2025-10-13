@@ -119,22 +119,27 @@ promises.push(
 );
 
 // ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG (Station.geojson) ====
-// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — auto-fix toạ độ ====
+// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — add & fit; fallback circle nếu icon lỗi ====
 promises.push(
-  fetch("./Station.geojson?v=4")
+  fetch("./Station.geojson?v=5")
     .then(r => { if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
     .then(data => {
-      const iconWater = L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20,20] });
+      const iconUrl = 'icons/ruler_black.svg';
+      const icon = L.icon({ iconUrl, iconSize: [20,20] });
 
+      let usedCircle = false;
       const layer = L.geoJSON(data, {
-        // Nếu file lỡ để [lat,lon], tự đảo thành [lon,lat]
-        coordsToLatLng: (coords) => {
-          let [lon, lat] = coords;
-          const inRange = (lo, la) => lo >= -180 && lo <= 180 && la >= -90 && la <= 90;
-          if (!inRange(lon, lat) && inRange(lat, lon)) [lon, lat] = [lat, lon]; // đảo
+        // đề phòng file để [lat,lon] → đảo lại
+        coordsToLatLng: (c) => {
+          let [lon, lat] = c;
+          if (Math.abs(lat) > 90 || Math.abs(lon) > 180) [lon, lat] = [lat, lon];
           return L.latLng(lat, lon);
         },
-        pointToLayer: (f, latlng) => L.marker(latlng, { icon: iconWater }),
+        pointToLayer: (f, ll) => {
+          // thử tạo marker với icon; nếu icon lỗi, dùng circle
+          try { return L.marker(ll, { icon }); }
+          catch { usedCircle = true; return L.circleMarker(ll, { radius: 6, weight: 1, fillOpacity: .9 }); }
+        },
         onEachFeature: (f, l) => {
           const p = f.properties || {};
           const c = l.getLatLng();
@@ -146,14 +151,15 @@ promises.push(
       window.layerMapping["tram_water"] = layer;
       console.log("[tram_water] features:", layer.getLayers().length);
 
-      // Nếu chưa tick thì vẫn add luôn để chị thấy ngay (tuỳ thích thì bỏ 2 dòng dưới)
+      // 👉 add & zoom ngay để chị thấy liền (bỏ nếu không muốn)
       map.addLayer(layer);
       try { map.fitBounds(layer.getBounds().pad(0.05)); } catch(_) {}
+
+      // nếu muốn trở lại dùng icon sau khi kiểm tra:
+      if (usedCircle) console.warn("Icon SVG có thể không render, đang dùng circleMarker tạm.");
     })
     .catch(e => console.warn("Station.geojson lỗi:", e))
 );
-
-
 
 
 // ================== 4) Vết lũ 2020–2021 ==================
