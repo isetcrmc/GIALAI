@@ -76,7 +76,7 @@ promises.push(
 const iconPS = L.divIcon({
   className: 'ps-dot',
   html: '<div style="width:14px;height:14px;border-radius:50%;background:#0b6;box-shadow:0 0 0 2px #fff,0 0 0 3px #0b6"></div>',
-  iconSize: [14,14],
+  iconSize: [7,7],
   iconAnchor: [7,7]
 });
 
@@ -93,8 +93,8 @@ promises.push(
 const iconNP = L.divIcon({
   className: 'np-dot',
   html: '<div style="width:16px;height:16px;border-radius:4px;background:#7e3ff2;box-shadow:0 0 0 2px #fff,0 0 0 3px #7e3ff2"></div>',
-  iconSize: [16,16],
-  iconAnchor: [8,8]
+  iconSize: [7,7],
+  iconAnchor: [7,7]
 });
 
 promises.push(
@@ -170,17 +170,18 @@ promises.push(
   fetch("Tower.geojson").then(r => r.json()).then(data => {
     const icon = L.icon({ iconUrl: 'icons/ruler_blue.svg', iconSize: [20,20] });
     layerMapping["ruler_blue"] = L.geoJSON(data, {
-      // Nới điều kiện: nếu có cột Type/Loai chứa chữ 'cảnh báo' thì lọc, nếu không thì cho hiện tất cả.
+      // vẫn giữ lọc mềm theo 'cảnh báo'
       filter: f => {
         const p = f.properties || {};
         const t = (p.Type || p.Loai || '').toString().toLowerCase();
-        if (t) return t.includes('cảnh báo');
-        return true;
+        return t ? t.includes('cảnh báo') : true;
       },
       pointToLayer: (f, ll) => L.marker(ll, { icon }),
       onEachFeature: (f, l) => {
         const p = f.properties || {};
-        l.bindPopup(`<b>${p.Name2 || p.Name || ''}</b>${p.Type ? `<br><b>Loại:</b> ${p.Type}`:''}`);
+        const name = p.Name2 || p.Name || '';
+        const loc  = p.Location || '';          // chỉ 2 trường Name + Location
+        l.bindPopup(`<b>${name}</b>${loc ? `<br><b>Location:</b> ${loc}` : ''}`);
       }
     });
   }).catch(e => console.warn("Tower.geojson lỗi:", e))
