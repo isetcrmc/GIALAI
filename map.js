@@ -119,26 +119,48 @@ promises.push(
 );
 
 // ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG (Station.geojson) ====
-// ================== Trạm đo mực nước tự động ==================
+// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — chỉ hiện khi tick ====
 promises.push(
   fetch("./Station.geojson?v=5")
-    .then(r => r.json())
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
     .then(data => {
-      const icon = L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20,20] });
+      const icon = L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20, 20] });
+      let usedCircle = false;
 
-      // Tạo layer đơn giản như tháp (không auto-add/fit)
-      layerMapping["tram_water"] = L.geoJSON(data, {
-        pointToLayer: (f, ll) => L.marker(ll, { icon }),
+      const layer = L.geoJSON(data, {
+        // Đề phòng file để [lat,lon] → tự đảo thành [lon,lat]
+        coordsToLatLng: (c) => {
+          let [lon, lat] = c;
+          if (Math.abs(lat) > 90 || Math.abs(lon) > 180) [lon, lat] = [lat, lon];
+          return L.latLng(lat, lon);
+        },
+        // Thử dùng icon; nếu icon lỗi thì fallback circle để vẫn nhìn thấy điểm
+        pointToLayer: (f, ll) => {
+          try { return L.marker(ll, { icon }); }
+          catch { usedCircle = true; return L.circleMarker(ll, { radius: 6, weight: 1, fillOpacity: .9 }); }
+        },
         onEachFeature: (f, l) => {
           const p = f.properties || {};
+          const c = l.getLatLng();
           const name = p.Name2 || p.TENHIENTHI || p.Name || p.Tentram || '';
-          const c = f.geometry && Array.isArray(f.geometry.coordinates) ? f.geometry.coordinates : null;
-          const lat = c ? Number(c[1]) : null, lon = c ? Number(c[0]) : null;
           l.bindPopup(
-            `<b>${name}</b>` + (lat!=null && lon!=null ? `<br><b>Tọa độ:</b> ${lat.toFixed(2)}, ${lon.toFixed(2)}` : '')
+            `<b>${name}</b><br><b>Tọa độ:</b> ${c.lat.toFixed(2)}, ${c.lng.toFixed(2)}`
           );
         }
       });
+
+      // Đăng ký để checkbox điều khiển bật/tắt (không tự add)
+      window.layerMapping["tram_water"] = layer;
+      console.log("[tram_water] features:", layer.getLayers().length);
+
+      // (tuỳ chọn) nếu trước đó người dùng đã tick sẵn thì add & fit một lần
+      const cb = document.querySelector('#layerControl input[data-layer="tram_water"]');
+      if (cb && cb.checked && !map.hasLayer(layer)) {
+        map.addLayer(layer);
+        try { map.fitBounds(layer.getBounds().pad(0.05)); } catch (_) {}
+      }
+
+      if (usedCircle) console.warn("Icon SVG có thể không render, đang dùng circleMarker tạm.");
     })
     .catch(e => console.warn("Station.geojson lỗi:", e))
 );
