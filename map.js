@@ -119,25 +119,43 @@ promises.push(
 );
 
 // ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG (Station.geojson) ====
-  "Trạm đo mực nước tự động": L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20, 20] })
-};
-
+// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — hiện tất cả điểm ====
 promises.push(
-  fetch("Station.geojson").then(res => res.json()).then(data => {
-    Object.entries(stationIcons).forEach(([type, icon]) => {
+  fetch("data/Station.geojson") // nếu file nằm cạnh index.html thì đổi thành "Station.geojson"
+    .then(r => r.json())
+    .then(data => {
+      const iconWater = L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20, 20] });
+
       const layer = L.geoJSON(data, {
-        filter: f => f.properties.Type === type,
-        pointToLayer: (f, latlng) => L.marker(latlng, { icon }),
+        pointToLayer: (f, latlng) => L.marker(latlng, { icon: iconWater }),
         onEachFeature: (f, l) => {
-          const p = f.properties;
-          l.bindPopup(`<b>${p.Name2 || p.Name || ''}</b><br><b>Loại:</b> ${p.Type}<br><b>Tọa độ:</b> ${p.X || ''}, ${p.Y || ''}`);
+          const p = f.properties || {};
+          // popup: tên + toạ độ (nếu có)
+          const [lon, lat] = (f.geometry?.coordinates ?? []);
+          const name = p.Name2 || p.TENHIENTHI || p.Name || p.Tentram || '';
+          let html = `<b>${name}</b>`;
+          if (typeof lat === "number" && typeof lon === "number") {
+            html += `<br><b>Tọa độ:</b> ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+          }
+          l.bindPopup(html);
         }
       });
-      const key = icon.options.iconUrl.split('/').pop().replace('.svg', '');
-      layerMapping[key] = layer;
-    });
-  })
+
+      // gán đúng key để khớp checkbox
+      window.layerMapping["tram_water"] = layer;
+
+      console.log("[tram_water] features:", layer.getLayers().length);
+
+      // nếu checkbox đã bật trước khi load xong → add & zoom tới
+      const cb = document.querySelector('#layerControl input[data-layer="tram_water"]');
+      if (cb && cb.checked) {
+        map.addLayer(layer);
+        try { map.fitBounds(layer.getBounds().pad(0.05)); } catch(_) {}
+      }
+    })
+    .catch(e => console.warn("Station.geojson lỗi:", e))
 );
+
 
 // ================== 4) Vết lũ 2020–2021 ==================
 ["2020","2021"].forEach((year) => {
