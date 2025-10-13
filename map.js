@@ -119,53 +119,40 @@ promises.push(
 );
 
 // ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG (Station.geojson) ====
-// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — preload icon, fallback nếu lỗi ====
-promises.push(new Promise((resolve) => {
-  const iconUrl = 'icons/ruler_black.svg';       // file nằm: ./icons/ruler_black.svg
-  const testImg = new Image();
+// ==== TRẠM ĐO MỰC NƯỚC TỰ ĐỘNG — auto-fix toạ độ ====
+promises.push(
+  fetch("./Station.geojson?v=4")
+    .then(r => { if(!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .then(data => {
+      const iconWater = L.icon({ iconUrl: 'icons/ruler_black.svg', iconSize: [20,20] });
 
-  testImg.onload = () => buildLayer(L.icon({ iconUrl, iconSize: [20,20] }));
-  testImg.onerror = () => buildLayer(new L.Icon.Default()); // fallback nếu SVG lỗi
-  testImg.src = iconUrl;  // kích hoạt tải ảnh
-
-  function buildLayer(iconObj) {
-    fetch('./Station.geojson?v=3')               // file nằm cùng thư mục với index.html
-      .then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then(data => {
-        const layer = L.geoJSON(data, {
-          pointToLayer: (f, latlng) => L.marker(latlng, { icon: iconObj }),
-          onEachFeature: (f, l) => {
-            const p = f.properties || {};
-            const [lon, lat] = f.geometry?.coordinates ?? [];
-            const name = p.Name2 || p.TENHIENTHI || p.Name || p.Tentram || '';
-            let html = `<b>${name}</b>`;
-            if (typeof lat === 'number' && typeof lon === 'number') {
-              html += `<br><b>Tọa độ:</b> ${lat.toFixed(2)}, ${lon.toFixed(2)}`;
-            }
-            l.bindPopup(html);
-          }
-        });
-
-        window.layerMapping['tram_water'] = layer;
-        console.log('[tram_water] markers:', layer.getLayers().length, 'icon:', iconObj.options.iconUrl || 'default');
-
-        // tự add & zoom (có thể bỏ nếu không muốn)
-        const cb = document.querySelector('#layerControl input[data-layer="tram_water"]');
-        if (!cb || cb.checked) {
-          map.addLayer(layer);
-          try { map.fitBounds(layer.getBounds().pad(0.05)); } catch(_) {}
+      const layer = L.geoJSON(data, {
+        // Nếu file lỡ để [lat,lon], tự đảo thành [lon,lat]
+        coordsToLatLng: (coords) => {
+          let [lon, lat] = coords;
+          const inRange = (lo, la) => lo >= -180 && lo <= 180 && la >= -90 && la <= 90;
+          if (!inRange(lon, lat) && inRange(lat, lon)) [lon, lat] = [lat, lon]; // đảo
+          return L.latLng(lat, lon);
+        },
+        pointToLayer: (f, latlng) => L.marker(latlng, { icon: iconWater }),
+        onEachFeature: (f, l) => {
+          const p = f.properties || {};
+          const c = l.getLatLng();
+          const name = p.Name2 || p.TENHIENTHI || p.Name || p.Tentram || '';
+          l.bindPopup(`<b>${name}</b><br><b>Tọa độ:</b> ${c.lat.toFixed(2)}, ${c.lng.toFixed(2)}`);
         }
-        resolve();
-      })
-      .catch(e => {
-        console.warn('Station.geojson lỗi:', e);
-        resolve();
       });
-  }
-}));
+
+      window.layerMapping["tram_water"] = layer;
+      console.log("[tram_water] features:", layer.getLayers().length);
+
+      // Nếu chưa tick thì vẫn add luôn để chị thấy ngay (tuỳ thích thì bỏ 2 dòng dưới)
+      map.addLayer(layer);
+      try { map.fitBounds(layer.getBounds().pad(0.05)); } catch(_) {}
+    })
+    .catch(e => console.warn("Station.geojson lỗi:", e))
+);
+
 
 
 
