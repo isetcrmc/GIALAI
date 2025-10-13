@@ -223,7 +223,7 @@ promises.push(
         const p = f.properties || {};
         const name = p.Name2 || p.Name || '';
         const loc  = p.Location || '';          // chỉ 2 trường Name + Location
-        l.bindPopup(`<b>${name}</b>${loc ? `<br><b>Location:</b> ${loc}` : ''}`);
+        l.bindPopup(`<b>${name}</b>${loc ? `<br><b>Địa điểm:</b> ${loc}` : ''}`);
       }
     });
   }).catch(e => console.warn("Tower.geojson lỗi:", e))
