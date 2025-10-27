@@ -146,7 +146,7 @@ promises.push(
 
 // ================== 4) Vết lũ 2020–2021 ==================
 ["2020","2021"].forEach((year) => {
-  const color = year === "2020" ? "orange" : "gold";
+  const color = year === "2020" ? "orange" : "#006400";
   const idKey = `flood${year}`;
 
   promises.push(
